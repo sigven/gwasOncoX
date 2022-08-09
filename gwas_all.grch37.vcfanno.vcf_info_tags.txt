@@ -1,2 +1,0 @@
-##SOURCE_GWAS=20210816
-##INFO=<ID=GWAS_HIT,Number=.,Type=String,Description="SNP associated with disease phenotype from genome-wide association study, format: rsid|risk_allele|pmid|tag_snp|p_valule|efo_id">
