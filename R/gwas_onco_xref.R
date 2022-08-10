@@ -10,17 +10,26 @@
 #' @keywords internal
 #'
 #'
-get_gwas_data <- function(cache_dir = NULL,
+get_gwas_data <- function(cache_dir = NA,
                          overwrite = F,
                          cancer_only = T,
                          build = "grch38",
                          data_type = "vcf"){
 
-  if(is.null(cache_dir) | !dir.exists(cache_dir)){
+  lgr::lgr$appenders$console$set_layout(
+    lgr::LayoutFormat$new(timestamp_fmt = "%Y-%m-%d %T"))
+  
+  if(is.na(cache_dir)){
     lgr::lgr$error(paste0("Argument cache_dir = '",
-                          cache_dir, "' is NULL or does not exist"))
+                          cache_dir, "' is not defined"))
+    return(0)
   }
-
+  
+  if(!dir.exists(cache_dir)){
+    lgr::lgr$error(paste0("Argument cache_dir = '",
+                          cache_dir, "' does not exist"))
+    return(0)
+  }
   
   dir_local <- file.path(
     cache_dir,
@@ -29,82 +38,81 @@ get_gwas_data <- function(cache_dir = NULL,
   )
   
   if(!dir.exists(dir_local)){
-    ## use more robust try catch-ish? 
-    system('mkdir ', dir_local)
+    dir.create(path = dir_local)
   }
   
+  data <- NULL
   files_to_retrieve <- 
-    gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$datatype == data_type,]
-  
-
-  fname_gd <- googledrive::as_id(
-    gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$name == db,]$gid)
-
-  md5checksum_package <-
-    gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$name == db,]$md5Checksum
-
-  dat <- NULL
-  if(file.exists(fname_local) & overwrite == F){
-    dat <- readRDS(fname_local)
-    if(!is.null(dat[['records']]) & !is.null(dat[['metadata']])){
-      lgr::lgr$info(paste0(
-        "Reading from cache_dir = '", cache_dir, "', argument overwrite = F"))
-      lgr::lgr$info(paste0("Object 'gene_",db,"' sucessfully loaded"))
-      if(db == 'gencode'){
-        lgr::lgr$info(paste0(
-          "Retrieved n = ", nrow(dat[['records']][['grch37']]), " records for",
-          " genome build grch37"))
-        lgr::lgr$info(paste0(
-          "Retrieved n = ", nrow(dat[['records']][['grch38']]), " records for",
-          " genome build grch38"))
-      }else{
-        lgr::lgr$info(paste0(
-          "Retrieved n = ", nrow(dat[['records']]), " records"))
-      }
-    }
-
-  }else{
-
-    googledrive::drive_deauth()
-
-    lgr::lgr$info("Downloading remote dataset from Google Drive to cache_dir")
-    dl <- googledrive::with_drive_quiet(
-      googledrive::drive_download(
-        fname_gd,
-        path = fname_local, overwrite = TRUE)
-    )
-
-    md5checksum_remote <- dl$drive_resource[[1]]$md5Checksum
-    md5checksum_local <- tools::md5sum(fname_local)
-    names(md5checksum_local) <- NULL
-
-    if(md5checksum_remote == md5checksum_local){
-      dat <- readRDS(fname_local)
-      if(!is.null(dat[['records']]) & !is.null(dat[['metadata']])){
-
-        lgr::lgr$info(paste0(
-          "Reading from cache_dir = ' (", cache_dir, "'), argument overwrite = F"))
-        lgr::lgr$info(paste0("Object 'gene_",db,"' sucessfully loaded"))
-        lgr::lgr$info(paste0("md5 checksum is valid: ", md5checksum_remote))
-
-        if(db == 'gencode'){
-          lgr::lgr$info(paste0(
-            "Retrieved n = ", nrow(dat[['records']][['grch37']]), " records for",
-            " genome build grch37"))
-          lgr::lgr$info(paste0(
-            "Retrieved n = ", nrow(dat[['records']][['grch38']]), " records for",
-            " genome build grch38"))
-        }else{
-          lgr::lgr$info(paste0(
-            "Retrieved ", nrow(dat[['records']]), " records"))
-        }
-      }
-    }else{
-      lgr::lgr$error(paste0("md5 checksum of local file (", md5checksum_local,
-                            ") is inconsistent with remote file (",
-                            md5checksum_remote,")"))
-    }
-
+    gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$datatype == data_type & 
+                            gwasOncoX:::db_id_ref$assembly == build &
+                            gwasOncoX:::db_id_ref$cancer_only == cancer_only,]
+  if(data_type == "vcf"){
+    files_to_retrieve <- 
+      gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$datatype == data_type & 
+                              (is.na(gwasOncoX:::db_id_ref$assembly) |
+                                 gwasOncoX:::db_id_ref$assembly == build) &
+                              gwasOncoX:::db_id_ref$cancer_only == cancer_only,]
   }
-  return(dat)
+  if(data_type == "rds"){
+    files_to_retrieve <- 
+      gwasOncoX:::db_id_ref[gwasOncoX:::db_id_ref$datatype == data_type & 
+                              gwasOncoX:::db_id_ref$cancer_only == cancer_only,]
+  }
+  
+  
+  for(i in 1:nrow(files_to_retrieve)){
+    fname_cache <- file.path(dir_local, 
+                             stringr::str_replace(
+                               files_to_retrieve[i, "name"],
+                               "v[0-9]{1,}\\.[0-9]{1,}\\.[0-9]{1,}.",
+                               ""
+                             ))
+    
+    files_to_retrieve[i, "fname_cache"] <- fname_cache
+    
+    if(overwrite == F & file.exists(fname_cache)){
+      lgr::lgr$info(paste0("File ", fname_cache, " already exists - ",
+                           "set 'overwrite = TRUE' to re-download"))
+      
+      if(data_type == "rds"){
+        data <- readRDS(file = fname_cache)
+      }
+    }
+    else{
+      fname_gd <- files_to_retrieve[i,"id"]
+      #md5checksum_package <- files_to_retrieve[i,"md5Checksum"]
+      
+      googledrive::drive_deauth()
+      
+      lgr::lgr$info("Downloading remote dataset from Google Drive to 'cache_dir'")
+      lgr::lgr$info(paste0("Local file name: ", fname_cache))
+      dl <- googledrive::with_drive_quiet(
+        googledrive::drive_download(
+          fname_gd,
+          path = fname_cache, overwrite = TRUE)
+      )
+      
+      md5checksum_remote <- dl$drive_resource[[1]]$md5Checksum
+      md5checksum_local <- tools::md5sum(fname_cache)
+      names(md5checksum_local) <- NULL
+      
+      if(md5checksum_remote != md5checksum_local){
+        lgr::lgr$error(paste0("md5 checksum of local file (", md5checksum_local,
+                              ") is inconsistent with remote file (",
+                              md5checksum_remote,")"))
+      }
+      
+      if(data_type == "rds"){
+        data <- readRDS(file = fname_cache)
+      }
+      
+    }
+  }
+  
+  retdata <- files_to_retrieve
+  if(!is.null(data) & data_type == "rds"){
+    retdata <- data
+  }
+  
+  return(retdata)
 }

@@ -102,11 +102,11 @@ get_citations_pubmed <- function(pmid){
 
 #' A function that prints GWAS data to VCF file
 #'
-#' @param gwas_data GWAS data
+#' @param gwas_vcf_data GWAS data
 #' @param cl class: all/cancer
 #' @param pversion gwasOncoX version
 #' 
-print_vcf <- function(gwas_data, cl = "all", pversion = "v0.2.0"){
+print_vcf <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
   
   vcf_fname <- 
     file.path("data-raw", 
@@ -146,23 +146,28 @@ print_vcf <- function(gwas_data, cl = "all", pversion = "v0.2.0"){
   
   header_lines <- 
     c("##fileformat=VCFv4.2","##assembly=grch37", 
-      "##INFO=<ID=GWAS_HIT,Number=.,Type=String,Description=\"SNP associated with disease phenotype from genome-wide association study, format: rsid|risk_allele|pmid|tag_snp|p_valule|efo_id\">",
+      "##INFO=<ID=GWAS_HIT,Number=.,Type=String,Description=\"SNP associated with disease phenotype from genome-wide association study, format: rsid|risk_allele|pmid|tag_snp|p_value|efo_id\">",
       "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")
   write(header_lines, file = vcf_fname, sep="\n")
   
-  gwas_vcf <- gwas_data
-  gwas_vcf$QUAL <- '.'
-  gwas_vcf$FILTER <- 'PASS'
-  gwas_vcf$ID <- '.'
-  gwas_vcf <-  gwas_vcf |>
+  gwas_vcf <- gwas_vcf_data |>
     dplyr::rename(CHROM = chrom, POS = 
                     pos_start, 
                   REF = ref, 
                   ALT = alt, 
-                  INFO = GWAS_HIT) |>
-    dplyr::filter(!is.na(REF) & !is.na(ALT) & !is.na(CHROM))
-  gwas_vcf <- gwas_vcf[,c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO")]
+                  INFO = gwas_hit) |>
+    dplyr::filter(!is.na(REF) & !is.na(ALT) & !is.na(CHROM)) |>
+    dplyr::mutate(QUAL = ".",
+                  FILTER = "PASS",
+                  ID = ".") |>
+    dplyr::mutate(INFO = dplyr::if_else(
+      !stringr::str_detect(INFO,"^GWAS_HIT="),
+      paste0("GWAS_HIT=", INFO),
+      as.character(INFO))) |>
+    dplyr::select(CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO) |>
+    dplyr::distinct()
   
+
   write.table(gwas_vcf, file=vcf_content_fname,sep="\t",col.names = F,quote=F, row.names = F)
   
   system(paste0("cat ",vcf_content_fname," | egrep -v \"^[XYM]\" | sort -k1,1n -k2,2n -k4,4 -k5,5 >> ",vcf_fname))
@@ -184,11 +189,11 @@ print_vcf <- function(gwas_data, cl = "all", pversion = "v0.2.0"){
 
 #' A function that prints GWAS variant data to BED file
 #'
-#' @param gwas_data GWAS data 
+#' @param gwas_vcf_data GWAS data 
 #' @param cl class: all/cancer
 #' @param pversion gwasOncoX version
 #' 
-print_bed <- function(gwas_data, cl = "all", pversion = "v0.2.0"){
+print_bed <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
   
   bed_fname <- 
     file.path("data-raw", 
@@ -219,14 +224,14 @@ print_bed <- function(gwas_data, cl = "all", pversion = "v0.2.0"){
   }
   
   gwas_bed <- as.data.frame(
-    gwas_data |>
+    gwas_vcf_data |>
       dplyr::filter(!is.na(pos_start) & !is.na(chrom)) |>
       dplyr::filter(stringr::str_detect(pos_start,"[0-9]{1,}")) |>
       dplyr::filter(nchar(pos_start) >= 4) |>
       dplyr::mutate(start = as.integer(pos_start) - 1) |>
       dplyr::rename(end = pos_start, 
-                    name = GWAS_HIT) |>
-      dplyr::mutate(name = stringr::str_replace(name,"GWAS_HIT=","")) |>
+                    name = gwas_hit) |>
+      tidyr::separate_rows(name, sep=",") |>
       dplyr::group_by(chrom, start, end) |>
       dplyr::summarise(name = paste(sort(unique(name)), collapse="@"),
                        .groups = "drop") |>

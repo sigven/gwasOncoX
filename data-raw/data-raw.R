@@ -8,6 +8,11 @@ options(timeout=50000)
 
 catalog_version_date <- '2022-07-30'
 ebi_catalog_version_date <- '20220730'
+fname_catalog_associations <- 
+  file.path(
+    "data-raw", 
+    paste0("gwas_catalog_all_associations_",ebi_catalog_version_date,".tsv"))
+
 
 gwas_collections <- c('cancer','all')
 gwas_hits_pr_rsid <- list()
@@ -19,17 +24,17 @@ for(c in gwas_collections){
   gwas_hits[[c]] <- NULL
 }
 
-download.file(url = "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative", 
-              destfile = file.path(
-                "data-raw", 
-                paste0("gwas_catalog_all_associations_",ebi_catalog_version_date,".tsv")))
-system(paste0("gzip data-raw/gwas_catalog_all_associations_",ebi_catalog_version_date,".tsv"))
+if(!file.exists(paste0(fname_catalog_associations,".gz"))){
+
+  download.file(url = "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative", 
+                destfile = fname_catalog_associations)
+  system(paste0("gzip ", fname_catalog_associations))
+}
 
 nuc_chromosomes_df <- data.frame("chrom" = c(as.character(seq(1:22)), "X", "Y"),
                                  stringsAsFactors = F)
 all_gwas_variants <- as.data.frame(
-  read.table(file = gzfile(paste0("data-raw/gwas_catalog_all_associations_", 
-                         ebi_catalog_version_date,".tsv.gz")), 
+  read.table(file = gzfile(paste0(fname_catalog_associations,".gz")), 
              sep="\t", comment.char = "",stringsAsFactors = F, 
              header = T,quote = "", fill = T) |>
     janitor::clean_names() |>
@@ -70,7 +75,7 @@ all_gwas_variants <- as.data.frame(
     dplyr::mutate(tag_snp = 'tag') |>
     dplyr::mutate(efo_id = stringr::str_replace_all(efo_id,"_",":")) |>
     dplyr::left_join(oncoPhenoMap::auxiliary_maps$efo$efo2name, by = c("efo_id")) |>
-    dplyr::mutate(GWAS_HIT = paste(
+    dplyr::mutate(gwas_hit = paste(
       rsid, strongest_snp_risk_allele, pmid, 
       tag_snp, p_value, efo_id, sep="|"))
 )
@@ -88,12 +93,12 @@ gwas_hits[['cancer']] <- all_gwas_variants |>
 gwas_hits_pr_rsid[['cancer']] <- as.data.frame(
   gwas_hits[['cancer']] |> 
     dplyr::group_by(rsid) |> 
-    dplyr::summarise(GWAS_HIT = paste(GWAS_HIT, collapse=","), .groups = "drop")
+    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse=","), .groups = "drop")
   )
 gwas_hits_pr_rsid[['all']] <- as.data.frame(
   gwas_hits[['all']] |> 
     dplyr::group_by(rsid) |> 
-    dplyr::summarise(GWAS_HIT = paste(GWAS_HIT, collapse=","), .groups = "drop")
+    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse=","), .groups = "drop")
   )
 
 
@@ -108,22 +113,23 @@ for(c in gwas_collections){
   gwas_citations[[c]] <- get_citations_pubmed(unique(gwas_hits[[c]]$pmid))
   
   ## GET DBSNP DATA (CHROM, POS, REF, ALT)
-  vcf_data <- get_dbsnp_data(unique(gwas_hits_pr_rsid[[c]]$rsid)) |>
-    dplyr::left_join(gwas_hits_pr_rsid[[c]],by=c("rsid")) |>
-    dplyr::mutate(GWAS_HIT = paste0('GWAS_HIT=',GWAS_HIT))
+  gwas_vcf_data <- get_dbsnp_data(unique(gwas_hits_pr_rsid[[c]]$rsid)) |>
+    dplyr::left_join(gwas_hits_pr_rsid[[c]],by=c("rsid"))
   
-  gwas_data <- as.data.frame(gwas_hits[[c]] |>
-    dplyr::full_join(dplyr::select(vcf_data, rsid, chrom, 
-                                   pos_start, pos_end, 
-                                   ref, alt, vartype)) |>
-    dplyr::mutate(var_id = paste(chrom, pos_start, ref, alt, sep = "_")) |>
-    dplyr::left_join(gwas_citations[[c]]) |>
-    dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
-    dplyr::select(-chromosome) |>
-    dplyr::select(var_id, chrom, pos_start, ref, alt, vartype,
-                  rsid, cytoband, strongest_snp_risk_allele,
-                  mapped_trait, efo_id, efo_name, primary_site,
-                  dplyr::everything()) 
+  gwas_phenotype_data <- as.data.frame(
+    gwas_hits[[c]] |>
+      dplyr::left_join(gwas_citations[[c]]) |>
+      dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
+      dplyr::mutate(p_value_verbose = sprintf("%2.1e",p_value)) %>%
+      dplyr::mutate(
+        gwas_citation_exp = paste0(paste0('<a href=\'https://www.ebi.ac.uk/gwas/variants/',
+                                 rsid,'\' target=\'_blank\'>'),
+                          stringr::str_to_title(efo_name),"</a>, ",
+                          link," (association p-value = ",p_value_verbose,")")) %>%
+      dplyr::mutate(gwas_phenotype = stringr::str_to_title(efo_name)) |>
+      dplyr::filter(!is.na(gwas_phenotype)) |>
+      dplyr::select(rsid, chromosome, cytoband, dplyr::everything()) |>
+      dplyr::distinct()
   )
   
   
@@ -133,11 +139,12 @@ for(c in gwas_collections){
     fname_rds <- file.path("data-raw", "gd_local",
                            paste0("gwas_all.v", version_minor_bumped,".rds"))
   }
-  saveRDS(gwas_data, file = fname_rds)
+  
+  saveRDS(gwas_phenotype_data, file = fname_rds)
   
   
-  print_vcf(gwas_data, cl = c, pversion = paste0("v",version_minor_bumped))
-  print_bed(gwas_data, cl = c, pversion = paste0("v",version_minor_bumped))
+  print_vcf(gwas_vcf_data, cl = c, pversion = paste0("v",version_minor_bumped))
+  print_bed(gwas_vcf_data, cl = c, pversion = paste0("v",version_minor_bumped))
   
 }
 
@@ -147,9 +154,11 @@ gd_records <- data.frame()
 
 for(elem in c('all','cancer')){
   
+  cancer_only <- F
   prefix = paste0("gwas_all.v",version_minor_bumped)
   if(elem == "cancer"){
     prefix = paste0("gwas.v",version_minor_bumped)
+    cancer_only <- T
   }
   
   for(format in c('bed','vcf')){
@@ -166,6 +175,7 @@ for(elem in c('all','cancer')){
           dplyr::mutate(
             datatype = format,
             assembly = build,
+            cancer_only = cancer_only,
             md5Checksum = gd_rec$drive_resource[[1]]$md5Checksum)
         
           
@@ -188,27 +198,48 @@ for(elem in c('all','cancer')){
     dplyr::mutate(
       datatype = "rds",
       assembly = NA,
+      cancer_only = cancer_only,
       md5Checksum = gd_rec$drive_resource[[1]]$md5Checksum)
   gd_records <- gd_records |>
     dplyr::bind_rows(
       df_rec
     )
   
-  (gd_rec <- googledrive::drive_upload(
-    file.path("data-raw", "gd_local","gwas.vcfanno.vcf_info_tags.txt"),
-    paste0("gwasOncoX/gwas.vcfanno.vcf_info_tags.txt")
-  ))
-  
-  df_rec <- as.data.frame(gd_rec) |>
-    dplyr::select(name, id) |>
-    dplyr::mutate(
-      datatype = "vcf",
-      assembly = NA,
-      md5Checksum = gd_rec$drive_resource[[1]]$md5Checksum)
-  gd_records <- gd_records |>
-    dplyr::bind_rows(
-      df_rec
-    )
+  if(cancer_only == T){
+    (gd_rec <- googledrive::drive_upload(
+      file.path("data-raw", "gd_local","gwas.vcfanno.vcf_info_tags.txt"),
+      paste0("gwasOncoX/gwas.vcfanno.vcf_info_tags.txt")
+    ))
+    
+    df_rec <- as.data.frame(gd_rec) |>
+      dplyr::select(name, id) |>
+      dplyr::mutate(
+        datatype = "vcf",
+        assembly = NA,
+        cancer_only = cancer_only,
+        md5Checksum = gd_rec$drive_resource[[1]]$md5Checksum)
+    gd_records <- gd_records |>
+      dplyr::bind_rows(
+        df_rec
+      )
+  }else{
+    (gd_rec <- googledrive::drive_upload(
+      file.path("data-raw", "gd_local","gwas_all.vcfanno.vcf_info_tags.txt"),
+      paste0("gwasOncoX/gwas_all.vcfanno.vcf_info_tags.txt")
+    ))
+    
+    df_rec <- as.data.frame(gd_rec) |>
+      dplyr::select(name, id) |>
+      dplyr::mutate(
+        datatype = "vcf",
+        assembly = NA,
+        cancer_only = cancer_only,
+        md5Checksum = gd_rec$drive_resource[[1]]$md5Checksum)
+    gd_records <- gd_records |>
+      dplyr::bind_rows(
+        df_rec
+      )
+  }
   
   gd_records <- gd_records |>
     dplyr::mutate(date = Sys.Date(),
@@ -216,26 +247,7 @@ for(elem in c('all','cancer')){
   
 }
 
-gd_records <- 
-
-db_id_ref <- dplyr::bind_rows(
-  dplyr::select(as.data.frame(gd_records$basic), name, id),
-  dplyr::select(as.data.frame(gd_records$alias), name, id),
-  dplyr::select(as.data.frame(gd_records$panels), name, id),
-  dplyr::select(as.data.frame(gd_records$gencode), name, id),
-  dplyr::select(as.data.frame(gd_records$predisposition), name, id)) |>
-  dplyr::rename(gid = id,
-                filename = name) |>
-  dplyr::mutate(name = stringr::str_replace(
-    stringr::str_replace(filename,"_v\\S+$",""),
-    "gene_","")) |>
-  dplyr::mutate(date = Sys.Date(),
-                pVersion = version_minor_bumped)
-db_id_ref$md5Checksum <- NA
-for(elem in c('basic','predisposition','panels','alias','gencode')){
-  
-  db_id_ref[db_id_ref$name == elem,]$md5Checksum <-
-    gd_records[[elem]]$drive_resource[[1]]$md5Checksum
-}
+db_id_ref <- gd_records
+db_id_ref$ebi_catalog_version <- ebi_catalog_version_date
 
 usethis::use_data(db_id_ref, internal = T, overwrite = T)
