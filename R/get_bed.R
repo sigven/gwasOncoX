@@ -2,7 +2,7 @@
 #' Get BED file with GWAS variants
 #'
 #' @description
-#' Downloads a tabix-index BED file (`.bed.gz` and `.bed..gz.tbi`) with variants 
+#' Downloads a tabix-indexed BED file (`.bed.gz` and `.bed.gz.tbi`) with variants 
 #' associated with disease phenotypes (as found in genome-wide association studies)
 #' The name of each record in the BED file has the following format:
 #' rsid|risk_allele|pmid|tag_snp|p_valule|efo_id (multiple instances separated 

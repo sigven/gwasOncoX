@@ -2,7 +2,7 @@
 #' Get VCF file with GWAS variants
 #'
 #' @description
-#' Downloads a tabix-index VCF file (`.bed.gz` and `.bed..gz.tbi`) with variants 
+#' Downloads a tabix-indexed VCF file (`.vcf.gz` and `.vcf.gz.tbi`) with variants 
 #' associated with disease phenotypes (as found in genome-wide association studies)
 #' The GWAS_HIT element of the INFO column has the following format:
 #' rsid|risk_allele|pmid|tag_snp|p_valule|efo_id
