@@ -10,8 +10,8 @@
 #'
 #'
 #' @param cache_dir Local directory for data download
-#' @param overwrite Logical indicating if local cache should be overwritten
-#' (set to TRUE to re-download if file exists in cache)
+#' @param force_download Logical indicating if local cache should be overwritten
+#' (set to TRUE to force download if file exists in cache)
 #' @param build genome assembly (grch37/grch38)
 #' @param cancer_only logical indicating retrieval of all variants versus 
 #' cancer-associated variants only 
@@ -23,14 +23,14 @@
 #'
 
 get_bed <- function(cache_dir = NA,
-                    overwrite = F,
+                    force_download = F,
                     build = "grch37",
                     cancer_only = T){
   
   stopifnot(build == "grch38" | build == "grch37")
 
   file_metadata <- get_gwas_data(cache_dir = cache_dir,
-                overwrite = overwrite,
+                force_download = force_download,
                 data_type = "bed",
                 cancer_only = cancer_only,
                 build = build)

@@ -6,7 +6,7 @@
 #' disease phenotypes - as discovered from genome-wide association studies.
 #'
 #' @param cache_dir Local directory for data download
-#' @param overwrite Logical indicating if local cache should be overwritten
+#' @param force_overwrite Logical indicating if local cache should be overwritten
 #' (set to TRUE to re-download if file exists in cache)
 #' @param cancer_only logical indicating retrieval of all variants versus 
 #' cancer-associated variants only 
@@ -20,11 +20,11 @@
 
 
 get_variants <- function(cache_dir = NA,
-                    overwrite = F,
+                    force_overwrite = F,
                     cancer_only = T){
   
   vardata <- get_gwas_data(cache_dir = cache_dir,
-                overwrite = overwrite,
+                force_overwrite = force_overwrite,
                 data_type = "rds",
                 cancer_only = cancer_only)
   return(vardata)

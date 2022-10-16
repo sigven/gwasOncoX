@@ -8,8 +8,8 @@ get_dbsnp_data <- function(rsids){
   all_hits <- data.frame()
   start <- 1
   stop <- min(199,length(rsids))
-  while(start < length(rsids)){
-    b <- myvariant::getVariants(rsids[start:stop],fields="dbsnp")
+  while (start < length(rsids)) {
+    b <- myvariant::getVariants(rsids[start:stop], fields = "dbsnp")
     dbsnp_results <- data.frame('rsid' = b$dbsnp.rsid, 
                                 'chrom' = b$dbsnp.chrom, 
                                 'pos_start' = b$dbsnp.hg19.start,
@@ -59,31 +59,31 @@ get_citations_pubmed <- function(pmid){
   all_citations <- data.frame()
   cat('Retrieving PubMed citations for PMID list, total length', length(pmid))
   cat('\n')
-  while(j < length(pmid_chunks)){
+  while (j < length(pmid_chunks)) {
     pmid_chunk <- pmid_chunks[[as.character(j)]]
     cat('Processing chunk ',j,' with ',length(pmid_chunk),'PMIDS')
     cat('\n')
     pmid_string <- paste(pmid_chunk,collapse = " ")
-    res <- RISmed::EUtilsSummary(pmid_string, type="esearch", 
-                                 db="pubmed", retmax = 5000)
+    res <- RISmed::EUtilsSummary(pmid_string, type = "esearch", 
+                                 db = "pubmed", retmax = 5000)
     result <- RISmed::EUtilsGet(res)
     year <- RISmed::YearPubmed(result)
     authorlist <- RISmed::Author(result)
     pmid_list <- RISmed::PMID(result)
     i <- 1
     first_author <- c()
-    while(i <= length(authorlist)){
+    while (i <= length(authorlist)) {
       first_author <- c(first_author, 
-                        paste(authorlist[[i]][1,]$LastName," et al.",sep=""))
+                        paste(authorlist[[i]][1,]$LastName," et al.", sep = ""))
       i <- i + 1
     }
     journal <- RISmed::ISOAbbreviation(result)
-    if(length(pmid_list) == length(first_author) & 
+    if (length(pmid_list) == length(first_author) & 
        length(pmid_list) == length(year) & 
-       length(journal) == length(pmid_list)){
+       length(journal) == length(pmid_list)) {
       citations <- data.frame('pmid' = as.integer(pmid_list), 
                               'citation' = paste(first_author, 
-                                                 year, journal,sep=", "), 
+                                                 year, journal, sep = ", "), 
                               stringsAsFactors = F)
       citations$link <- 
         paste0('<a href=\'https://www.ncbi.nlm.nih.gov/pubmed/', 
@@ -124,7 +124,7 @@ print_vcf <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
               "gd_local",
               "gwas_all.vcfanno.vcf_info_tags.txt")
   
-  if(cl == "cancer"){
+  if (cl == "cancer") {
     vcf_fname <- 
       file.path("data-raw", 
                 "gd_local",
@@ -148,7 +148,7 @@ print_vcf <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
     c("##fileformat=VCFv4.2","##assembly=grch37", 
       "##INFO=<ID=GWAS_HIT,Number=.,Type=String,Description=\"SNP associated with disease phenotype from genome-wide association study, format: rsid|risk_allele|pmid|tag_snp|p_value|efo_id\">",
       "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")
-  write(header_lines, file = vcf_fname, sep="\n")
+  write(header_lines, file = vcf_fname, sep = "\n")
   
   gwas_vcf <- gwas_vcf_data |>
     dplyr::rename(CHROM = chrom, POS = 
@@ -168,19 +168,27 @@ print_vcf <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
     dplyr::distinct()
   
 
-  write.table(gwas_vcf, file=vcf_content_fname,sep="\t",col.names = F,quote=F, row.names = F)
+  write.table(gwas_vcf, file = vcf_content_fname,
+              sep = "\t", col.names = F, quote = F, 
+              row.names = F)
   
-  system(paste0("cat ",vcf_content_fname," | egrep -v \"^[XYM]\" | sort -k1,1n -k2,2n -k4,4 -k5,5 >> ",vcf_fname))
-  system(paste0("cat ",vcf_content_fname," | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k4,4 -k5,5 >> ",vcf_fname))
-  system(paste0("bgzip -c ",vcf_fname," > ",vcf_fname,".gz"))
-  system(paste0("tabix -p vcf ",vcf_fname,".gz"))
+  system(paste0(
+    "cat ",vcf_content_fname,
+    " | egrep -v \"^[XYM]\" | sort -k1,1n -k2,2n -k4,4 -k5,5 >> ",
+    vcf_fname))
+  system(paste0("cat ",vcf_content_fname, 
+                " | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k4,4 -k5,5 >> ",
+                vcf_fname))
+  system(paste0("bgzip -c ", vcf_fname," > ",vcf_fname, ".gz"))
+  system(paste0("tabix -p vcf ", vcf_fname, ".gz"))
   
-  write(header_lines[3],file=vcfanno_fname,sep="\n")
+  write(header_lines[3],file = vcfanno_fname, sep = "\n")
   
-  crossmapr::crossmap_vcf(target_genome_file = '/Users/sigven/research/DB/hg38/hg38.fa', 
-                          direction = 'hg19Tohg38', 
-                          source_vcf = vcf_fname, 
-                          target_vcf = vcf_fname_grch38)
+  crossmapr::crossmap_vcf(
+    target_genome_file = '/Users/sigven/research/DB/hg38/hg38.fa', 
+    direction = 'hg19Tohg38', 
+    source_vcf = vcf_fname, 
+    target_vcf = vcf_fname_grch38)
   system(paste0("rm -f ", vcf_content_fname))
   system(paste0("rm -f ", vcf_fname))
   system(paste0("rm -f ", vcf_fname_grch38))
@@ -207,7 +215,7 @@ print_bed <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
     file.path("data-raw", 
               "gwas_all_bedcontent.bed")
   
-  if(cl == "cancer"){
+  if (cl == "cancer") {
     bed_fname <- 
       file.path("data-raw", 
                 "gd_local",
@@ -231,9 +239,10 @@ print_bed <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
       dplyr::mutate(start = as.integer(pos_start) - 1) |>
       dplyr::rename(end = pos_start, 
                     name = gwas_hit) |>
-      tidyr::separate_rows(name, sep=",") |>
+      tidyr::separate_rows(name, sep = ",") |>
       dplyr::group_by(chrom, start, end) |>
-      dplyr::summarise(name = paste(sort(unique(name)), collapse="@"),
+      dplyr::summarise(name = paste(sort(unique(name)), 
+                                    collapse = "@"),
                        .groups = "drop") |>
       dplyr::mutate(chrom = paste0("chr", chrom)) |>
       sort_bed_regions() |>
@@ -241,7 +250,8 @@ print_bed <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
   )
 
   options(scipen = 999)
-  write.table(gwas_bed, file=bed_fname,sep="\t",col.names = F,quote=F, row.names = F)
+  write.table(gwas_bed, file = bed_fname, 
+              sep = "\t",col.names = F, quote = F, row.names = F)
   
   system(paste0("bgzip -c ",bed_fname," > ",bed_fname,".gz"))
   system(paste0("tabix -p bed ",bed_fname,".gz"))
@@ -249,8 +259,8 @@ print_bed <- function(gwas_vcf_data, cl = "all", pversion = "v0.2.0"){
   tmp <- as.data.frame(
     readr::read_tsv(bed_fname, col_names = F, show_col_types = F))
   tmp$X1 <- paste0('chr',tmp$X1)
-  write.table(tmp, file=paste0("data-raw/gwas_all.cm.bed"), 
-              col.names = F,row.names = F,quote = F,sep="\t")
+  write.table(tmp, file = paste0("data-raw/gwas_all.cm.bed"), 
+              col.names = F, row.names = F, quote = F, sep = "\t")
   
   crossmapr::crossmap_bed(direction = 'hg19Tohg38', 
                           source_bed = paste0("data-raw/gwas_all.cm.bed"), 
@@ -264,19 +274,22 @@ sort_bed_regions <- function(unsorted_regions){
   sorted_regions <- NULL
   assertable::assert_colnames(
     unsorted_regions,c('start','end'),only_colnames = F, quiet = T)
-  if("chrom" %in% colnames(unsorted_regions) & 
+  if ("chrom" %in% colnames(unsorted_regions) & 
      "start" %in% colnames(unsorted_regions) & 
-     "end" %in% colnames(unsorted_regions)){
-    chrOrder <- paste0('chr',c(as.character(c(1:22)),"X","Y","M"))
-    unsorted_regions$chrom <- factor(unsorted_regions$chrom, levels=chrOrder)
-    unsorted_regions <- unsorted_regions[order(unsorted_regions$chrom),]
+     "end" %in% colnames(unsorted_regions)) {
+    chrOrder <- paste0('chr',c(as.character(c(1:22)), "X", "Y", "M"))
+    unsorted_regions$chrom <- factor(unsorted_regions$chrom, 
+                                     levels = chrOrder)
+    unsorted_regions <- unsorted_regions[order(unsorted_regions$chrom), ]
     
     sorted_regions <- data.frame()
-    for(chrom in chrOrder){
-      if(nrow(unsorted_regions[unsorted_regions$chrom == chrom,]) > 0){
+    for (chrom in chrOrder) {
+      if (nrow(unsorted_regions[unsorted_regions$chrom == chrom,]) > 0) {
         chrom_regions <- unsorted_regions[unsorted_regions$chrom == chrom,]
-        chrom_regions_sorted <- chrom_regions[with(chrom_regions, order(start, end)),]
-        sorted_regions <- dplyr::bind_rows(sorted_regions, chrom_regions_sorted)
+        chrom_regions_sorted <- 
+          chrom_regions[with(chrom_regions, order(start, end)),]
+        sorted_regions <- 
+          dplyr::bind_rows(sorted_regions, chrom_regions_sorted)
       }
     }
     

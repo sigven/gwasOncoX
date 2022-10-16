@@ -4,10 +4,10 @@ suppressPackageStartupMessages(library(myvariant))
 
 source("data-raw/gwas_utils.R")
 
-options(timeout=50000)
+options(timeout = 50000)
 
-catalog_version_date <- '2022-08-26'
-ebi_catalog_version_date <- '20220826'
+catalog_version_date <- '2022-10-08'
+ebi_catalog_version_date <- '20221008'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -77,7 +77,7 @@ all_gwas_variants <- as.data.frame(
     dplyr::left_join(oncoPhenoMap::auxiliary_maps$efo$efo2name, by = c("efo_id")) |>
     dplyr::mutate(gwas_hit = paste(
       rsid, strongest_snp_risk_allele, pmid, 
-      tag_snp, p_value, efo_id, sep="|"))
+      tag_snp, p_value, efo_id, sep = "|"))
 )
 
 gwas_hits[['all']] <- all_gwas_variants
@@ -93,28 +93,31 @@ gwas_hits[['cancer']] <- all_gwas_variants |>
 gwas_hits_pr_rsid[['cancer']] <- as.data.frame(
   gwas_hits[['cancer']] |> 
     dplyr::group_by(rsid) |> 
-    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse=","), .groups = "drop")
+    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse = ","), 
+                     .groups = "drop")
   )
 gwas_hits_pr_rsid[['all']] <- as.data.frame(
   gwas_hits[['all']] |> 
     dplyr::group_by(rsid) |> 
-    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse=","), .groups = "drop")
+    dplyr::summarise(gwas_hit = paste(gwas_hit, collapse = ","), 
+                     .groups = "drop")
   )
 
 
 version_minor_bumped <- paste0(
   "0.",
-  as.character(as.integer(substr(as.character(packageVersion("gwasOncoX")),3,3)) + 1),
+  as.character(as.integer(substr(as.character(
+    packageVersion("gwasOncoX")), 3, 3)) + 1),
   ".0")
 
-for(c in gwas_collections){
+for (c in gwas_collections) {
   
   ## GET CITATION DATA
   gwas_citations[[c]] <- get_citations_pubmed(unique(gwas_hits[[c]]$pmid))
   
   ## GET DBSNP DATA (CHROM, POS, REF, ALT)
   gwas_vcf_data <- get_dbsnp_data(unique(gwas_hits_pr_rsid[[c]]$rsid)) |>
-    dplyr::left_join(gwas_hits_pr_rsid[[c]],by=c("rsid"))
+    dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid"))
   
   gwas_phenotype_data <- as.data.frame(
     gwas_hits[[c]] |>
@@ -122,10 +125,11 @@ for(c in gwas_collections){
       dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
       dplyr::mutate(p_value_verbose = sprintf("%2.1e",p_value)) %>%
       dplyr::mutate(
-        gwas_citation_exp = paste0(paste0('<a href=\'https://www.ebi.ac.uk/gwas/variants/',
-                                 rsid,'\' target=\'_blank\'>'),
-                          stringr::str_to_title(efo_name),"</a>, ",
-                          link," (association p-value = ",p_value_verbose,")")) %>%
+        gwas_citation_exp = paste0(
+          paste0('<a href=\'https://www.ebi.ac.uk/gwas/variants/',
+                 rsid,'\' target=\'_blank\'>'),
+          stringr::str_to_title(efo_name),"</a>, ",
+          link," (association p-value = ",p_value_verbose,")")) %>%
       dplyr::mutate(gwas_phenotype = stringr::str_to_title(efo_name)) |>
       dplyr::filter(!is.na(gwas_phenotype)) |>
       dplyr::select(rsid, chromosome, cytoband, dplyr::everything()) |>
@@ -133,18 +137,20 @@ for(c in gwas_collections){
   )
   
   
-  fname_rds <- file.path("data-raw", "gd_local",
-                         paste0("gwas.v", version_minor_bumped,".rds"))
-  if(c == 'all'){
-    fname_rds <- file.path("data-raw", "gd_local",
-                           paste0("gwas_all.v", version_minor_bumped,".rds"))
+  fname_rds <- file.path(
+    "data-raw", "gd_local",
+    paste0("gwas.v", version_minor_bumped, ".rds"))
+  if (c == 'all') {
+    fname_rds <- file.path(
+      "data-raw", "gd_local",
+      paste0("gwas_all.v", version_minor_bumped, ".rds"))
   }
   
   saveRDS(gwas_phenotype_data, file = fname_rds)
   
   
-  print_vcf(gwas_vcf_data, cl = c, pversion = paste0("v",version_minor_bumped))
-  print_bed(gwas_vcf_data, cl = c, pversion = paste0("v",version_minor_bumped))
+  print_vcf(gwas_vcf_data, cl = c, pversion = paste0("v", version_minor_bumped))
+  print_bed(gwas_vcf_data, cl = c, pversion = paste0("v", version_minor_bumped))
   
 }
 
@@ -152,22 +158,22 @@ for(c in gwas_collections){
 googledrive::drive_auth_configure(api_key = Sys.getenv("GD_KEY"))
 gd_records <- data.frame()
 
-for(elem in c('all','cancer')){
+for (elem in c('all','cancer')) {
   
-  cancer_only <- F
-  prefix = paste0("gwas_all.v",version_minor_bumped)
-  if(elem == "cancer"){
-    prefix = paste0("gwas.v",version_minor_bumped)
-    cancer_only <- T
+  cancer_only <- FALSE
+  prefix = paste0("gwas_all.v", version_minor_bumped)
+  if (elem == "cancer") {
+    prefix = paste0("gwas.v", version_minor_bumped)
+    cancer_only <- TRUE
   }
   
-  for(format in c('bed','vcf')){
-    for(build in c('grch37','grch38')){
-      for(ftype in c('gz','gz.tbi')){
+  for (format in c("bed", "vcf")) {
+    for (build in c("grch37", "grch38")) {
+      for (ftype in c("gz", "gz.tbi")) {
         (gd_rec <- googledrive::drive_upload(
           file.path("data-raw", "gd_local",
-                    paste0(prefix,".",build,".",format,".",ftype)),
-          paste0("gwasOncoX/", prefix,".",build,".", format, ".",ftype)
+                    paste0(prefix,".",build,".",format, ".", ftype)),
+          paste0("gwasOncoX/", prefix,".",build,".", format, ".", ftype)
         ))
         
         df_rec <- as.data.frame(gd_rec) |>
@@ -205,9 +211,9 @@ for(elem in c('all','cancer')){
       df_rec
     )
   
-  if(cancer_only == T){
+  if (cancer_only == T) {
     (gd_rec <- googledrive::drive_upload(
-      file.path("data-raw", "gd_local","gwas.vcfanno.vcf_info_tags.txt"),
+      file.path("data-raw", "gd_local", "gwas.vcfanno.vcf_info_tags.txt"),
       paste0("gwasOncoX/gwas.vcfanno.vcf_info_tags.txt")
     ))
     
@@ -224,7 +230,7 @@ for(elem in c('all','cancer')){
       )
   }else{
     (gd_rec <- googledrive::drive_upload(
-      file.path("data-raw", "gd_local","gwas_all.vcfanno.vcf_info_tags.txt"),
+      file.path("data-raw", "gd_local", "gwas_all.vcfanno.vcf_info_tags.txt"),
       paste0("gwasOncoX/gwas_all.vcfanno.vcf_info_tags.txt")
     ))
     

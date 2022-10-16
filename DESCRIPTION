@@ -2,7 +2,7 @@ Package: gwasOncoX
 Type: Package
 Title: Human GWAS tracks for the oncology domain
 Version: 0.4.0
-Date: 2022-09-12
+Date: 2022-10-16
 Authors@R: person(given = "Sigve", family = "Nakken", role = c("aut", "cre"),
              email = "sigven@ifi.uio.no",
              comment = c(ORCID = "0000-0001-8468-2050"))
@@ -10,8 +10,7 @@ Maintainer: Sigve Nakken <sigven@ifi.uio.no>
 Description: A small collection of variant datasets harvested from genome-wide 
     association studies of cancer phenotypes. Both VCF files and BED tracks with loci 
     associated with cancer phenotypes can be retrieved.
-URL: https://github.com/sigven/gwasOncoX,
-    https://sigven.github.io/gwasoncox/
+URL: https://github.com/sigven/gwasOncoX
 BugReports: https://github.com/sigven/gwasOncoX/issues
 Depends: 
     R (>= 4.1)
