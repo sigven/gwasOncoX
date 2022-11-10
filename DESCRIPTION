@@ -1,7 +1,7 @@
 Package: gwasOncoX
 Type: Package
 Title: Human GWAS tracks for the oncology domain
-Version: 0.5.0
+Version: 0.6.0
 Date: 2022-11-10
 Authors@R: person(given = "Sigve", family = "Nakken", role = c("aut", "cre"),
              email = "sigven@ifi.uio.no",
