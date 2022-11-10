@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 50000)
 
-catalog_version_date <- '2022-10-08'
-ebi_catalog_version_date <- '20221008'
+catalog_version_date <- '2022-11-01'
+ebi_catalog_version_date <- '20221101'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -18,13 +18,13 @@ gwas_collections <- c('cancer','all')
 gwas_hits_pr_rsid <- list()
 gwas_hits <- list()
 gwas_citations <- list()
-for(c in gwas_collections){
+for (c in gwas_collections) {
   gwas_hits_pr_rsid[[c]] <- data.frame()
   gwas_citations[[c]] <- data.frame()
   gwas_hits[[c]] <- NULL
 }
 
-if(!file.exists(paste0(fname_catalog_associations,".gz"))){
+if (!file.exists(paste0(fname_catalog_associations,".gz"))) {
 
   download.file(url = "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative", 
                 destfile = fname_catalog_associations)
@@ -35,7 +35,7 @@ nuc_chromosomes_df <- data.frame("chrom" = c(as.character(seq(1:22)), "X", "Y"),
                                  stringsAsFactors = F)
 all_gwas_variants <- as.data.frame(
   read.table(file = gzfile(paste0(fname_catalog_associations,".gz")), 
-             sep="\t", comment.char = "",stringsAsFactors = F, 
+             sep = "\t", comment.char = "",stringsAsFactors = F, 
              header = T,quote = "", fill = T) |>
     janitor::clean_names() |>
     dplyr::select(pubmedid, disease_trait, region, 
@@ -63,9 +63,14 @@ all_gwas_variants <- as.data.frame(
       efo_id = 
         stringr::str_replace_all(
           mapped_trait_uri,
-          "(http://www.orpha.net/ORDO/)|(http://purl.obolibrary.org/obo/)|(http://www.ebi.ac.uk/efo/)","")) |>
-    tidyr::separate_rows(efo_id,sep=", ") |>
-    tidyr::separate_rows(snps,sep="; ") |>
+          paste(
+            "(http://www.orpha.net/ORDO/)",
+            "(http://purl.obolibrary.org/obo/)",
+            "(http://www.ebi.ac.uk/efo/)",
+            sep = "|"
+          ), "")) |>
+    tidyr::separate_rows(efo_id, sep = ", ") |>
+    tidyr::separate_rows(snps, sep = "; ") |>
     dplyr::filter(!startsWith(efo_id,"http")) |>
     ## ignore associations to gene ontology (restrict to EFO ontology)
     #dplyr::filter(!stringr::str_detect(efo_id,"obolibrary")) |>
@@ -74,7 +79,8 @@ all_gwas_variants <- as.data.frame(
                   chromosome = chr_id, cytoband = region) |>
     dplyr::mutate(tag_snp = 'tag') |>
     dplyr::mutate(efo_id = stringr::str_replace_all(efo_id,"_",":")) |>
-    dplyr::left_join(oncoPhenoMap::auxiliary_maps$efo$efo2name, by = c("efo_id")) |>
+    dplyr::left_join(
+      oncoPhenoMap::auxiliary_maps$efo$efo2name, by = c("efo_id")) |>
     dplyr::mutate(gwas_hit = paste(
       rsid, strongest_snp_risk_allele, pmid, 
       tag_snp, p_value, efo_id, sep = "|"))
@@ -83,7 +89,11 @@ all_gwas_variants <- as.data.frame(
 gwas_hits[['all']] <- all_gwas_variants
 gwas_hits[['cancer']] <- all_gwas_variants |>
   dplyr::filter(stringr::str_detect(
-    tolower(mapped_trait),"tumor|cancer|neuroblastom|neoplasm|chemotherapy|glioma|glioblastoma|wilms|myeloma|adenocarcinoma|barrett|sarcoma|melanoma|leukaemia|leukemia|lymphom|platinum|carcinoma|hereditary")) |> 
+    tolower(mapped_trait),
+    paste0("tumor|cancer|neuroblastom|neoplasm|chemotherapy|",
+           "glioma|glioblastoma|wilms|myeloma|adenocarcinoma|barrett|",
+           "sarcoma|melanoma|leukaemia|leukemia|lymphom|",
+           "platinum|carcinoma|hereditary"))) |> 
   dplyr::filter(
     !stringr::str_detect(
       disease_trait,
