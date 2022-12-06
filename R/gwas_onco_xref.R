@@ -68,7 +68,7 @@ get_gwas_data <- function(cache_dir = NA,
       dir_local, 
       stringr::str_replace(
         files_to_retrieve[i, "name"],
-        "v[0-9]{1,}\\.[0-9]{1,}\\.[0-9]{1,}.",
+        "v[0-9]{1,}\\.[0-9]{1,}\\.[0-9]{1,}_",
         ""
       ))
     
