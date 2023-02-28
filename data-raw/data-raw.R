@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 50000)
 
-catalog_version_date <- '2023-01-14'
-ebi_catalog_version_date <- '20230114'
+catalog_version_date <- '2023-02-15'
+ebi_catalog_version_date <- '20230215'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -131,10 +131,24 @@ version_minor_bumped <- paste0(
 for (c in gwas_collections) {
   
   ## GET CITATION DATA
-  gwas_citations[[c]] <- get_citations_pubmed(unique(gwas_hits[[c]]$pmid))
+  gwas_citations[[c]] <- get_citations_pubmed(
+    pmids = unique(gwas_hits[[c]]$pmid),
+    cache_pmid_fname = file.path(
+      "data-raw",
+      paste0(
+        "citations_gwas_",c,"_current.rds"
+    ))
+  )
   
+
   ## GET DBSNP DATA (CHROM, POS, REF, ALT)
-  gwas_vcf_data <- get_dbsnp_data(unique(gwas_hits_pr_rsid[[c]]$rsid)) |>
+  gwas_vcf_data <- get_dbsnp_data(
+    rsids = unique(gwas_hits_pr_rsid[[c]]$rsid),
+    cache_dbsnp_fname = file.path(
+      "data-raw",
+      paste0(
+        "dbsnp_gwas_",c,"_current.rds"
+      ))) |>
     dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid"))
   
   gwas_phenotype_data <- as.data.frame(

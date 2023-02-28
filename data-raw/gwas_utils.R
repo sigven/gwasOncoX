@@ -1,11 +1,40 @@
 #' A function that retrieves variant data from dbSNP (chrom,pos,ref,alt) for a a list of rsids
 #'
 #' @param rsids
+#' @param cache_dbsnp_fname File with retrieved dbsnp data (.rds)
+
 #' @return dbsnp_results 
 #' 
-get_dbsnp_data <- function(rsids){
+get_dbsnp_data <- function(rsids, cache_dbsnp_fname = NA){
+  
+  rsid_df <- data.frame('rsid' = rsids)
+  cache_dbsnp <- data.frame()
+  
+  if(!is.na(cache_dbsnp_fname)){
+    if(file.exists(cache_dbsnp_fname)){
+      cache_dbsnp <- as.data.frame(
+        readRDS(
+          file = cache_dbsnp_fname
+        )
+      )
+      
+      rsid_df <- rsid_df |>
+        dplyr::anti_join(
+          cache_dbsnp, by = "rsid")
+    }
+  }
   
   all_hits <- data.frame()
+  
+  if(nrow(rsid_df) == 0){
+    return(cache_dbsnp)
+  }else{
+    all_hits <- cache_dbsnp
+  }
+  
+  rsids <- rsid_df$rsid
+  
+  
   start <- 1
   stop <- min(199,length(rsids))
   while (start < length(rsids)) {
@@ -38,6 +67,10 @@ get_dbsnp_data <- function(rsids){
     dplyr::inner_join(
       nuc_chromosomes_df, by = c("chrom" = "chrom"))
   
+  if(!is.na(cache_dbsnp_fname)){
+    saveRDS(all_hits, file = cache_dbsnp_fname)
+  }
+  
   return(all_hits)
   
 }
@@ -51,16 +84,43 @@ chunk <- function(x,n) split(x, factor(sort(rank(x)%%n)))
 #' A function that returns a citation with first author, 
 #' journal and year for a PubMed ID
 #'
-#' @param pmid An array of Pubmed IDs
+#' @param pmids An array of Pubmed IDs
+#' @param cache_pmid_fname File with retrieved citation data (.rds)
 #' @return citation PubMed citation, with first author, journal and year
 #' 
-get_citations_pubmed <- function(pmid){
+get_citations_pubmed <- function(pmids, cache_pmid_fname = NA){
+  
+  pmid_df <- data.frame('pmid' = pmids)
+  cache_citations <- data.frame()
+  
+  if(!is.na(cache_pmid_fname)){
+    if(file.exists(cache_pmid_fname)){
+      cache_citations <- as.data.frame(
+        readRDS(
+          file = cache_pmid_fname
+        )
+      )
+      
+      pmid_df <- pmid_df |>
+        dplyr::anti_join(
+          cache_citations, by = "pmid")
+    }
+  }
+  
+  all_citations <- data.frame()
+  if(nrow(pmid_df) == 0){
+    return(cache_citations)
+  }else{
+    all_citations <- cache_citations
+  }
+  
+  pmids <- pmid_df$pmid
   
   ## make chunk of maximal 400 PMIDs from input array (limit by EUtils)
-  pmid_chunks <- chunk(pmid,ceiling(length(pmid)/100))
+  pmid_chunks <- chunk(pmids,ceiling(length(pmids)/100))
   j <- 0
-  all_citations <- data.frame()
-  cat('Retrieving PubMed citations for PMID list, total length', length(pmid))
+  cat('Retrieving PubMed citations for PMID list, total length', 
+      length(pmids))
   cat('\n')
   while (j < length(pmid_chunks)) {
     pmid_chunk <- pmid_chunks[[as.character(j)]]
@@ -77,26 +137,33 @@ get_citations_pubmed <- function(pmid){
     first_author <- c()
     while (i <= length(authorlist)) {
       first_author <- c(first_author, 
-                        paste(authorlist[[i]][1,]$LastName," et al.", sep = ""))
+                        paste(authorlist[[i]][1,]$LastName,
+                              " et al.", sep = ""))
       i <- i + 1
     }
     journal <- RISmed::ISOAbbreviation(result)
     if (length(pmid_list) == length(first_author) & 
        length(pmid_list) == length(year) & 
        length(journal) == length(pmid_list)) {
-      citations <- data.frame('pmid' = as.integer(pmid_list), 
-                              'citation' = paste(first_author, 
-                                                 year, journal, sep = ", "), 
-                              stringsAsFactors = F)
+      citations <- data.frame(
+        'pmid' = as.integer(pmid_list), 
+        'citation' = paste(first_author, 
+                           year, journal, sep = ", "), 
+        stringsAsFactors = F)
       citations$link <- 
         paste0('<a href=\'https://www.ncbi.nlm.nih.gov/pubmed/', 
                citations$pmid,'\' target=\'_blank\'>', 
                citations$citation,'</a>')
-      all_citations <- dplyr::bind_rows(all_citations, citations)
+      all_citations <- dplyr::bind_rows(
+        all_citations, citations)
     }else{
       cat('ERROR')
     }
     j <- j + 1
+  }
+  
+  if(!is.na(cache_pmid_fname)){
+    saveRDS(all_citations, file = cache_pmid_fname)
   }
   
   return(all_citations)
@@ -126,6 +193,9 @@ print_gwas_vcf <- function(gwas_vcf_data,
     
     vcf_fname_prefix <- paste(
       "gwas", pversion, sep = "_")
+    vcfanno_fname <- 
+      file.path(output_directory,
+                "gwas.vcfanno.vcf_info_tags.txt")
   }
   
   header_lines <- 
