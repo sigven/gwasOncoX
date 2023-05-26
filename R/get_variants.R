@@ -24,7 +24,7 @@ get_variants <- function(cache_dir = NA,
                     cancer_only = T){
   
   vardata <- get_gwas_data(cache_dir = cache_dir,
-                force_overwrite = force_overwrite,
+                force_download = force_overwrite,
                 data_type = "rds",
                 cancer_only = cancer_only)
   return(vardata)
