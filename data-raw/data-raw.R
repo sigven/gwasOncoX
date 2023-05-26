@@ -122,7 +122,7 @@ gwas_hits_pr_rsid[['all']] <- as.data.frame(
   )
 
 
-version_minor_bumped <- paste0(
+version_bumped <- paste0(
   "0.",
   as.character(as.integer(substr(as.character(
     packageVersion("gwasOncoX")), 3, 3)) + 1),
@@ -171,11 +171,11 @@ for (c in gwas_collections) {
   
   fname_rds <- file.path(
     "data-raw", "gd_local",
-    paste0("gwas_v", version_minor_bumped, ".rds"))
+    paste0("gwas_v", version_bumped, ".rds"))
   if (c == 'all') {
     fname_rds <- file.path(
       "data-raw", "gd_local",
-      paste0("gwas_all_v", version_minor_bumped, ".rds"))
+      paste0("gwas_all_v", version_bumped, ".rds"))
   }
   
   saveRDS(gwas_phenotype_data, file = fname_rds)
@@ -190,7 +190,7 @@ for (c in gwas_collections) {
       "gd_local"
     ),
     pversion = paste0(
-      "v", version_minor_bumped))
+      "v", version_bumped))
   
   print_gwas_bed(
     gwas_vcf_data, 
@@ -201,7 +201,7 @@ for (c in gwas_collections) {
       "gd_local"
     ),
     pversion = paste0(
-      "v", version_minor_bumped))
+      "v", version_bumped))
   
 }
 
@@ -212,9 +212,9 @@ gd_records <- data.frame()
 for (elem in c('all','cancer')) {
   
   cancer_only <- FALSE
-  prefix = paste0("gwas_all_v", version_minor_bumped)
+  prefix = paste0("gwas_all_v", version_bumped)
   if (elem == "cancer") {
-    prefix = paste0("gwas_v", version_minor_bumped)
+    prefix = paste0("gwas_v", version_bumped)
     cancer_only <- TRUE
   }
   
@@ -300,7 +300,7 @@ for (elem in c('all','cancer')) {
   
   gd_records <- gd_records |>
     dplyr::mutate(date = Sys.Date(),
-                  pVersion = version_minor_bumped)
+                  pVersion = version_bumped)
   
 }
 
