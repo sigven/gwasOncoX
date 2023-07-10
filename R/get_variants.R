@@ -11,8 +11,10 @@
 #' @param cancer_only logical indicating retrieval of all variants versus 
 #' cancer-associated variants only 
 #'
-#' @returns a data frame with varions annotations (phenotype ID's, 
-#' association p-value, risk alleles, PMIDs) for GWAS variants
+#' @returns a list object with two elements
+#' 1. records - A data frame with varions annotations (phenotype ID's, 
+#' association p-value, risk alleles, PMIDs) for GWAS Catalog variants
+#' 2. metadata - GWAS Catalog metadata
 #'
 #' @export
 #'

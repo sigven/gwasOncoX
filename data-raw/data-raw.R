@@ -4,16 +4,28 @@ suppressPackageStartupMessages(library(myvariant))
 
 source("data-raw/gwas_utils.R")
 
-options(timeout = 50000)
+options(timeout = 500000)
 
-catalog_version_date <- '2023-06-03'
-ebi_catalog_version_date <- '20230603'
+catalog_version_date <- '2023-07-05'
+ebi_catalog_version_date <- '20230705'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
     paste0("gwas_catalog_all_associations_", 
            ebi_catalog_version_date,".tsv"))
 
+
+gwas_metadata <- 
+  data.frame(
+    'source' = "GWAS Catalog",
+    'source_description' = "The NHGRI-EBI Catalog of human genome-wide association studies",
+    'source_url' = "https://www.ebi.ac.uk/gwas/home",
+    'source_citation' = "Sollis et al., Nucleic Acids Res, 2022; 36350656",	
+    'source_version' = as.character(glue::glue('v{ebi_catalog_version_date}')),
+    'source_abbreviation' = 'gwas_catalog',
+    'source_license' = "EMBL-EBI terms of use",
+    'source_license_url' = "https://www.ebi.ac.uk/about/terms-of-use"
+  )
 
 gwas_collections <- c('cancer','all')
 gwas_hits_pr_rsid <- list()
@@ -151,7 +163,7 @@ for (c in gwas_collections) {
       ))) |>
     dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid"))
   
-  gwas_phenotype_data <- as.data.frame(
+  gwas_phenotype_records <- as.data.frame(
     gwas_hits[[c]] |>
       dplyr::left_join(gwas_citations[[c]]) |>
       dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
@@ -167,6 +179,11 @@ for (c in gwas_collections) {
       dplyr::select(rsid, chromosome, cytoband, dplyr::everything()) |>
       dplyr::distinct()
   )
+  
+  gwas_phenotype_data <- list()
+  gwas_phenotype_data[['records']] <- gwas_phenotype_records
+  gwas_phenotype_data[['metadata']] <- gwas_metadata
+    
   
   
   fname_rds <- file.path(
@@ -281,7 +298,10 @@ for (elem in c('all','cancer')) {
       )
   }else{
     (gd_rec <- googledrive::drive_upload(
-      file.path("data-raw", "gd_local", "gwas_all.vcfanno.vcf_info_tags.txt"),
+      file.path(
+        "data-raw", 
+        "gd_local", 
+        "gwas_all.vcfanno.vcf_info_tags.txt"),
       paste0("gwasOncoX/gwas_all.vcfanno.vcf_info_tags.txt")
     ))
     
@@ -308,3 +328,4 @@ db_id_ref <- gd_records
 db_id_ref$ebi_catalog_version <- ebi_catalog_version_date
 
 usethis::use_data(db_id_ref, internal = T, overwrite = T)
+#usethis::use_data(db_id_ref, internal = T, overwrite = T)

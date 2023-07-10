@@ -12,7 +12,7 @@ The goal of **gwasOncoX** is to offer an R package that simplifies the process o
 
 The package offers (currently) three different functions:
 
--   [`get_variants()`](https://sigven.github.io/gwasOncoX/reference/get_variants.html) - retrieves phenotype information related to GWAS variants in cancer
+-   [`get_variants()`](https://sigven.github.io/gwasOncoX/reference/get_variants.html) - retrieves phenotype information related to GWAS variants in cancer (and GWAS catalog metadata - version, citation etc.)
 
 -   [`get_bed()`](https://sigven.github.io/gwasOncoX/reference/get_bed.html) - retrieves BED tracks ( *grch37* and *grch38* ) for variants associated with cancer
 
@@ -22,7 +22,7 @@ The package offers (currently) three different functions:
 
 If you use the datasets provided with **gwasOncoX**, make sure you properly cite the the [NHGRI-EBI Catalog of human genome-wide association studies](https://www.ebi.ac.uk/gwas/docs/about):
 
--   [Buniello et al., Nucleic Acids Res, 2019](https://pubmed.ncbi.nlm.nih.gov/30445434/)
+-   [Sollis et al., Nucleic Acids Res, 2022](https://pubmed.ncbi.nlm.nih.gov/36350656/)
 
 ### Contact
 
