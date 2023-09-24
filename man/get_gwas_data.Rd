@@ -6,7 +6,7 @@
 \usage{
 get_gwas_data(
   cache_dir = NA,
-  overwrite = F,
+  force_download = F,
   cancer_only = T,
   build = "grch38",
   data_type = "vcf"
@@ -15,8 +15,8 @@ get_gwas_data(
 \arguments{
 \item{cache_dir}{Local directory for data download}
 
-\item{overwrite}{Logical indicating if local cache should be overwritten
-(set to TRUE to re-download if file exists in cache)}
+\item{force_download}{Logical indicating if local cache should be overwritten
+(set to TRUE to force download if file exists in cache)}
 
 \item{cancer_only}{retrieve data relevant for cancer phenotypes only}
 

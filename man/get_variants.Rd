@@ -4,22 +4,27 @@
 \alias{get_variants}
 \title{Get GWAS-associated variants}
 \usage{
-get_variants(cache_dir = NA, overwrite = F, cancer_only = T)
+get_variants(cache_dir = NA, force_overwrite = F, cancer_only = T)
 }
 \arguments{
 \item{cache_dir}{Local directory for data download}
 
-\item{overwrite}{Logical indicating if local cache should be overwritten
+\item{force_overwrite}{Logical indicating if local cache should be overwritten
 (set to TRUE to re-download if file exists in cache)}
 
 \item{cancer_only}{logical indicating retrieval of all variants versus
 cancer-associated variants only}
 }
 \value{
-a data frame with varions annotations (phenotype ID's,
-association p-value, risk alleles, PMIDs) for GWAS variants
+a list object with two elements
+\enumerate{
+\item records - A data frame with variant annotations (phenotype ID,
+association p-value, risk allele, PMID etc.) for GWAS Catalog variants
+\item metadata - GWAS Catalog metadata
+}
 }
 \description{
-Downloads and returns a dataset with variants associated with
-disease phenotypes - as discovered from genome-wide association studies.
+Downloads and returns a dataset with low to modest risk variants associated
+with disease phenotypes - as discovered from genome-wide association studies
+(NHGRI-EBI GWAS catalog)
 }

@@ -2,8 +2,9 @@
 #' Get GWAS-associated variants
 #'
 #' @description
-#' Downloads and returns a dataset with variants associated with
-#' disease phenotypes - as discovered from genome-wide association studies.
+#' Downloads and returns a dataset with low to modest risk variants associated 
+#' with disease phenotypes - as discovered from genome-wide association studies 
+#' (NHGRI-EBI GWAS catalog)
 #'
 #' @param cache_dir Local directory for data download
 #' @param force_overwrite Logical indicating if local cache should be overwritten
@@ -12,8 +13,8 @@
 #' cancer-associated variants only 
 #'
 #' @returns a list object with two elements
-#' 1. records - A data frame with varions annotations (phenotype ID's, 
-#' association p-value, risk alleles, PMIDs) for GWAS Catalog variants
+#' 1. records - A data frame with variant annotations (phenotype ID, 
+#' association p-value, risk allele, PMID etc.) for GWAS Catalog variants
 #' 2. metadata - GWAS Catalog metadata
 #'
 #' @export

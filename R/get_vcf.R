@@ -3,7 +3,8 @@
 #'
 #' @description
 #' Downloads a tabix-indexed VCF file (`.vcf.gz` and `.vcf.gz.tbi`) with variants 
-#' associated with disease phenotypes (as found in genome-wide association studies)
+#' associated with disease phenotypes (as found in the NHGRI-EBI GWAS catalog).
+#' Only variants where the risk-allele is properly identified are included here.
 #' The GWAS_HIT element of the INFO column has the following format:
 #' rsid|risk_allele|pmid|tag_snp|p_valule|efo_id
 #'

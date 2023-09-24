@@ -4,13 +4,13 @@
 \alias{get_vcf}
 \title{Get VCF file with GWAS variants}
 \usage{
-get_vcf(cache_dir = NA, overwrite = F, build = "grch37", cancer_only = T)
+get_vcf(cache_dir = NA, force_download = F, build = "grch37", cancer_only = T)
 }
 \arguments{
 \item{cache_dir}{Local directory for data download}
 
-\item{overwrite}{Logical indicating if local cache should be overwritten
-(set to TRUE to re-download if file exists in cache)}
+\item{force_download}{Logical indicating if local cache should be overwritten
+(set to TRUE to force download if file exists in cache)}
 
 \item{build}{genome assembly (grch37/grch38)}
 
@@ -22,7 +22,8 @@ A data frame with file download information and metadata
 }
 \description{
 Downloads a tabix-indexed VCF file (\code{.vcf.gz} and \code{.vcf.gz.tbi}) with variants
-associated with disease phenotypes (as found in genome-wide association studies)
+associated with disease phenotypes (as found in the NHGRI-EBI GWAS catalog).
+Only variants where the risk-allele is properly identified are included here.
 The GWAS_HIT element of the INFO column has the following format:
 rsid|risk_allele|pmid|tag_snp|p_valule|efo_id
 }

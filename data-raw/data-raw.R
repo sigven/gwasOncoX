@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 500000)
 
-catalog_version_date <- '2023-08-26'
-ebi_catalog_version_date <- '20230826'
+catalog_version_date <- '2023-09-10'
+ebi_catalog_version_date <- '20230910'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -161,7 +161,27 @@ for (c in gwas_collections) {
       paste0(
         "dbsnp_gwas_",c,"_current.rds"
       ))) |>
-    dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid"))
+    dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid")) |>
+    tidyr::separate_rows(gwas_hit, sep=",") |> 
+    tidyr::separate(
+      gwas_hit, 
+      c("rsid2","risk_allele","pmid","tag","pvalue","efo_id"),
+      sep="\\|") |> 
+    dplyr::filter(risk_allele != "NA") |> 
+    dplyr::filter(risk_allele == ref | risk_allele == alt) |> 
+    dplyr::distinct() |> 
+    dplyr::mutate(
+      gwas_hit = paste(
+        rsid,risk_allele,pmid,"tag",pvalue,efo_id,sep="|")) |> 
+    dplyr::filter(as.numeric(pvalue) <= 0.000001) |> 
+    dplyr::select(-c(rsid2,risk_allele,pmid,tag,pvalue,efo_id)) |>
+    dplyr::group_by(
+      dplyr::across(c(-gwas_hit))
+    ) |>
+    dplyr::summarise(
+      gwas_hit = paste(gwas_hit, collapse=","),
+      .groups = "drop"
+    )
   
   gwas_phenotype_records <- as.data.frame(
     gwas_hits[[c]] |>
@@ -177,7 +197,11 @@ for (c in gwas_collections) {
       dplyr::mutate(gwas_phenotype = stringr::str_to_title(efo_name)) |>
       dplyr::filter(!is.na(gwas_phenotype)) |>
       dplyr::select(rsid, chromosome, cytoband, dplyr::everything()) |>
-      dplyr::distinct()
+      dplyr::distinct() |>
+      dplyr::inner_join(
+        dplyr::select(gwas_vcf_data, rsid),
+        by = "rsid"
+      )
   )
   
   gwas_phenotype_data <- list()
@@ -223,7 +247,7 @@ for (c in gwas_collections) {
 }
 
 
-googledrive::drive_auth_configure(api_key = Sys.getenv("GD_KEY"))
+#googledrive::drive_auth_configure(api_key = Sys.getenv("GD_KEY"))
 gd_records <- data.frame()
 
 for (elem in c('all','cancer')) {
@@ -328,4 +352,3 @@ db_id_ref <- gd_records
 db_id_ref$ebi_catalog_version <- ebi_catalog_version_date
 
 usethis::use_data(db_id_ref, internal = T, overwrite = T)
-#usethis::use_data(db_id_ref, internal = T, overwrite = T)
