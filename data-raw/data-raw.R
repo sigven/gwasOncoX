@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 500000)
 
-catalog_version_date <- '2023-09-10'
-ebi_catalog_version_date <- '20230910'
+catalog_version_date <- '2023-10-11'
+ebi_catalog_version_date <- '20231011'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -161,7 +161,9 @@ for (c in gwas_collections) {
       paste0(
         "dbsnp_gwas_",c,"_current.rds"
       ))) |>
-    dplyr::left_join(gwas_hits_pr_rsid[[c]], by = c("rsid")) |>
+    dplyr::left_join(
+      gwas_hits_pr_rsid[[c]], by = c("rsid"),
+      relationship = "many-to-many") |>
     tidyr::separate_rows(gwas_hit, sep=",") |> 
     tidyr::separate(
       gwas_hit, 
@@ -185,7 +187,9 @@ for (c in gwas_collections) {
   
   gwas_phenotype_records <- as.data.frame(
     gwas_hits[[c]] |>
-      dplyr::left_join(gwas_citations[[c]]) |>
+      dplyr::left_join(
+        gwas_citations[[c]],
+        relationship = "many-to-many") |>
       dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
       dplyr::mutate(p_value_verbose = sprintf("%2.1e",p_value)) |>
       dplyr::mutate(
@@ -200,7 +204,8 @@ for (c in gwas_collections) {
       dplyr::distinct() |>
       dplyr::inner_join(
         dplyr::select(gwas_vcf_data, rsid),
-        by = "rsid"
+        by = "rsid",
+        relationship = "many-to-many"
       )
   )
   
