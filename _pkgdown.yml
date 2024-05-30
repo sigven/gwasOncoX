@@ -1,4 +1,18 @@
 url: https://sigven.github.io/gwasOncoX/
 template:
   bootstrap: 5
-
+  bslib:
+    info: "#0C2C56"
+    dropdown-link-hover-bg: "#0C2C56"
+    dropdown-link-hover-color: "white"
+    dropdown-link-active-color: "white"
+    navbar-light-color: "white"
+    navbar-light-brand-color: "white"
+    navbar-light-brand-hover-color: "white"
+    navbar-link-color: "white"
+navbar:
+  link-color: "white"
+  light-color: "white"
+  light-brand-color: "white"
+  type: light
+  bg: info
