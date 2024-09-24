@@ -7,6 +7,16 @@
 #' 
 get_dbsnp_data <- function(rsids, cache_dbsnp_fname = NA){
   
+  # gw_hits <- gwas_hits_pr_rsid$cancer |>
+  #   dplyr::filter(
+  #     stringr::str_detect(rsid, "^rs[0-9]{1,}")) |>
+  #   tidyr::separate(
+  #     gwas_hit,
+  #     c("rsid","risk_allele","pmid","tag","p_value","efo_id"),
+  #     sep = "\\|"
+  #   )
+  
+  rsids <- rsids[stringr::str_detect(rsids,"^rs[0-9]{1,}")]
   rsid_df <- data.frame('rsid' = rsids)
   cache_dbsnp <- data.frame()
   

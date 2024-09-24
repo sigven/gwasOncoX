@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 500000)
 
-catalog_version_date <- '2024-08-12'
-ebi_catalog_version_date <- '20240812'
+catalog_version_date <- '2024-09-22'
+ebi_catalog_version_date <- '20240922'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -188,7 +188,7 @@ for (c in gwas_collections) {
   gwas_phenotype_records <- as.data.frame(
     gwas_hits[[c]] |>
       dplyr::left_join(
-        gwas_citations[[c]],
+        gwas_citations[[c]], by = "pmid",
         relationship = "many-to-many") |>
       dplyr::mutate(gwas_catalog_version = ebi_catalog_version_date) |>
       dplyr::mutate(p_value_verbose = sprintf("%2.1e",p_value)) |>
