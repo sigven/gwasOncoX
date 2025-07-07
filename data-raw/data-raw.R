@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 500000)
 
-catalog_version_date <- '2025-05-13'
-ebi_catalog_version_date <- '2025-05-13'
+catalog_version_date <- '2025-06-27'
+ebi_catalog_version_date <- '2025-06-27'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
