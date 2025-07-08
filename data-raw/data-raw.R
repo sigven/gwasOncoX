@@ -251,7 +251,6 @@ for (c in gwas_collections) {
   
 }
 
-
 #googledrive::drive_auth_configure(api_key = Sys.getenv("GD_KEY"))
 gd_records <- data.frame()
 
