@@ -4,10 +4,10 @@ suppressPackageStartupMessages(library(myvariant))
 
 source("data-raw/gwas_utils.R")
 
-options(timeout = 500000)
+options(timeout = 5000000)
 
-catalog_version_date <- '2025-06-27'
-ebi_catalog_version_date <- '2025-06-27'
+catalog_version_date <- '2025-08-24'
+ebi_catalog_version_date <- '2025-08-24'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
