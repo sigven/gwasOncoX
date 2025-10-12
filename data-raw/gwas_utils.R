@@ -96,9 +96,14 @@ chunk <- function(x,n) split(x, factor(sort(rank(x)%%n)))
 #'
 #' @param pmids An array of Pubmed IDs
 #' @param cache_pmid_fname File with retrieved citation data (.rds)
+#' @param chunk_size Size of chunks to be processed (
+#' max 400 due to EUtils limit)
 #' @return citation PubMed citation, with first author, journal and year
 #' 
-get_citations_pubmed <- function(pmids, cache_pmid_fname = NA){
+get_citations_pubmed <- function(
+    pmids, 
+    cache_pmid_fname = NA,
+    chunk_size = 100){
   
   pmid_df <- data.frame('pmid' = pmids)
   cache_citations <- data.frame()
@@ -123,11 +128,10 @@ get_citations_pubmed <- function(pmids, cache_pmid_fname = NA){
   }else{
     all_citations <- cache_citations
   }
-  
   pmids <- pmid_df$pmid
   
   ## make chunk of maximal 400 PMIDs from input array (limit by EUtils)
-  pmid_chunks <- chunk(pmids,ceiling(length(pmids)/100))
+  pmid_chunks <- chunk(pmids,ceiling(length(pmids)/chunk_size))
   j <- 0
   cat('Retrieving PubMed citations for PMID list, total length', 
       length(pmids))
@@ -146,9 +150,21 @@ get_citations_pubmed <- function(pmids, cache_pmid_fname = NA){
     i <- 1
     first_author <- c()
     while (i <= length(authorlist)) {
-      first_author <- c(first_author, 
-                        paste(authorlist[[i]][1,]$LastName,
-                              " et al.", sep = ""))
+      if (length(authorlist[[i]]) == 5) {
+        if(!is.na(authorlist[[i]][1,]$LastName)){
+          first_author <- c(first_author, 
+                            paste(authorlist[[i]][1,]$LastName,
+                                  " et al.", sep = ""))
+        }
+        if(is.na(authorlist[[i]][1,]$LastName) &
+           !is.na(authorlist[[i]][1,]$CollectiveName)){
+          first_author <- c(
+            first_author,
+            authorlist[[i]][1,]$CollectiveName)
+        }
+      }else{
+        first_author <- c(first_author, "Unknown et al.")
+      }
       i <- i + 1
     }
     journal <- RISmed::ISOAbbreviation(result)

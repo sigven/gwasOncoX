@@ -4,7 +4,7 @@ citEntry(
   entry    = "Manual",
   title    = "gwasOncoX: Low-to-moderate risk variants from GWAS studies in cancer",
   author   = "Sigve Nakken",
-  year     = "2022",
+  year     = "2025",
   note     = "R package version 1.5.5",
   url      = "https://github.com/sigven/gwasOncoX",
   textVersion = paste("Nakken S. ","(2025)",

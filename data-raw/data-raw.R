@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 5000000)
 
-catalog_version_date <- '2025-08-24'
-ebi_catalog_version_date <- '2025-08-24'
+catalog_version_date <- '2025-09-29'
+ebi_catalog_version_date <- '2025-09-29'
 fname_catalog_associations <- 
   file.path(
     "data-raw", 
@@ -145,11 +145,9 @@ for (c in gwas_collections) {
   ## GET CITATION DATA
   gwas_citations[[c]] <- get_citations_pubmed(
     pmids = unique(gwas_hits[[c]]$pmid),
-    cache_pmid_fname = file.path(
+    chunk_size <- 250, cache_pmid_fname = file.path(
       "data-raw",
-      paste0(
-        "citations_gwas_",c,"_current.rds"
-    ))
+      paste0("citations_gwas_",c,"_current.rds"))
   )
   
 
