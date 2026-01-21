@@ -10,13 +10,13 @@
 Source:
 [`inst/CITATION`](https://github.com/sigven/gwasOncoX/blob/main/inst/CITATION)
 
-Nakken S. (2025) gwasOncoX: Low-to-moderate risk variants in cancer. R
-package version 1.5.7. (https://github.com/sigven/gwasOncoX)
+Nakken S. (2026) gwasOncoX: Low-to-moderate risk variants in cancer. R
+package version 1.5.8. (https://github.com/sigven/gwasOncoX)
 
     @Manual{,
       title = {gwasOncoX: Low-to-moderate risk variants from GWAS studies in cancer},
       author = {Sigve Nakken},
-      year = {2025},
-      note = {R package version 1.5.7},
+      year = {2026},
+      note = {R package version 1.5.8},
       url = {https://github.com/sigven/gwasOncoX},
     }
