@@ -140,7 +140,7 @@ gwas_hits_pr_rsid[['all']] <- as.data.frame(
   )
 
 
-version_bumped <- "1.6.0"
+version_bumped <- "1.6.1"
 
 for (c in gwas_collections) {
 
