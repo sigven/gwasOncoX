@@ -140,7 +140,7 @@ gwas_hits_pr_rsid[['all']] <- as.data.frame(
   )
 
 
-version_bumped <- "1.6.1"
+version_bumped <- "1.6.0"
 
 for (c in gwas_collections) {
 
@@ -167,7 +167,8 @@ for (c in gwas_collections) {
     tidyr::separate_rows(gwas_hit, sep=",") |>
     tidyr::separate(
       gwas_hit,
-      c("rsid2","risk_allele","pmid","tag","pvalue","efo_id"),
+      c("rsid2","risk_allele","pmid",
+        "tag","pvalue","efo_id"),
       sep="\\|") |>
     dplyr::filter(risk_allele != "NA") |>
     dplyr::filter(risk_allele == ref | risk_allele == alt) |>
@@ -266,9 +267,15 @@ for (elem in c('all','cancer')) {
   for (format in c("bed", "vcf")) {
     for (build in c("grch37", "grch38")) {
       for (ftype in c("gz", "gz.tbi")) {
-        (gd_rec <- googledrive::drive_upload(
+        local_fname <- 
           file.path("data-raw", "gd_local",
-                    paste0(prefix,"_",build,".",format, ".", ftype)),
+                    paste0(prefix,"_",build,".",format, ".", ftype))
+        if(!file.exists(local_fname)){
+          stop(paste0("File ", local_fname, " does not exist - ",
+                      "check that print_gwas_vcf and print_gwas_bed functions have been run"))
+        }
+        (gd_rec <- googledrive::drive_upload(
+          local_fname,
           paste0("gwasOncoX/", prefix,"_",build,".", format, ".", ftype)
         ))
 

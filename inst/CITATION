@@ -5,10 +5,10 @@ citEntry(
   title    = "gwasOncoX: Low-to-moderate risk variants from GWAS studies in cancer",
   author   = "Sigve Nakken",
   year     = "2026",
-  note     = "R package version 1.6.1",
+  note     = "R package version 1.5.9",
   url      = "https://github.com/sigven/gwasOncoX",
   textVersion = paste("Nakken S. ","(2026)",
   " gwasOncoX: Low-to-moderate risk variants in cancer.",
-  " R package version 1.6.1.",
+  " R package version 1.5.9.",
   " (https://github.com/sigven/gwasOncoX)")
 )
