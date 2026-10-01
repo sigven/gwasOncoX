@@ -6,8 +6,8 @@ source("data-raw/gwas_utils.R")
 
 options(timeout = 5000000)
 
-catalog_version_date <- '2026-08-22'
-ebi_catalog_version_date <- '2026-08-22'
+catalog_version_date <- '2026-09-13'
+ebi_catalog_version_date <- '2026-09-13'
 fname_catalog_associations <-
   file.path(
     "data-raw",
@@ -140,7 +140,7 @@ gwas_hits_pr_rsid[['all']] <- as.data.frame(
   )
 
 
-version_bumped <- "1.6.2"
+version_bumped <- "1.6.3"
 
 for (c in gwas_collections) {
 
